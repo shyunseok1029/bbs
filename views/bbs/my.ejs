@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/stylesheets/bbs.css" rel="stylesheet">
+    <title>내 활동</title>
+</head>
+<body class="bbs-dashboard">
+    <main class="bbs-app">
+        <aside class="bbs-sidebar">
+            <a href="/bbs/list" class="bbs-sidebar-brand">
+                <span class="bbs-brand-mark">B</span>
+                <span>BBS</span>
+            </a>
+            <nav class="bbs-nav">
+                <a href="/bbs/list"><i class="bi bi-grid-fill"></i>게시판</a>
+                <a class="active" href="/bbs/my"><i class="bi bi-person-circle"></i>내 활동</a>
+                <a href="/bbs/updatesignup"><i class="bi bi-gear"></i>정보수정</a>
+                <form method="post" action="/bbs/logout" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="bbs-link"><i class="bi bi-box-arrow-right"></i>로그아웃</button></form>
+            </nav>
+        </aside>
+
+        <section class="bbs-main">
+            <header class="bbs-hero">
+                <div>
+                    <div class="bbs-kicker">Activity</div>
+                    <h1>내 활동</h1>
+                    <p><strong><%=userId%></strong>님의 게시글과 댓글을 모아봤어요.</p>
+                </div>
+                <div class="bbs-hero-actions">
+                    <a href="/bbs/list" class="btn btn-outline-secondary">목록</a>
+                </div>
+            </header>
+
+            <section class="bbs-panel mb-4">
+                <div class="bbs-toolbar d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0 fw-bold">내가 쓴 글</h2>
+                    <span class="badge text-bg-light border"><%=posts.rows.length%>개</span>
+                </div>
+
+                <div class="bbs-activity-list">
+                    <% for (var i = 0; i < posts.rows.length; i++) {
+                        var post = posts.rows[i];
+                        var postPreview = post[2] || '';
+                        if (postPreview.length > 88) postPreview = postPreview.substring(0, 88) + '...';
+                    %>
+                        <article class="bbs-activity-row">
+                            <div class="bbs-activity-main">
+                                <a class="bbs-post-title bbs-link" href="/bbs/read?brdno=<%=post[0]%>"><%=post[1] || '(제목 없음)'%></a>
+                                <span><%=postPreview%></span>
+                            </div>
+                            <div class="bbs-activity-meta">
+                                <span><i class="bi bi-calendar3"></i><%=post[3]%></span>
+                                <span><i class="bi bi-eye"></i><%=post[4] || 0%></span>
+                            </div>
+                        </article>
+                    <% } %>
+                </div>
+
+                <% if (posts.rows.length === 0) { %>
+                    <div class="bbs-empty">작성한 게시글이 없습니다.</div>
+                <% } %>
+            </section>
+
+            <section class="bbs-panel">
+                <div class="bbs-toolbar d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0 fw-bold">내 댓글/대댓글</h2>
+                    <span class="badge text-bg-light border"><%=comments.rows.length%>개</span>
+                </div>
+
+                <div class="bbs-activity-list">
+                    <% for (var j = 0; j < comments.rows.length; j++) {
+                        var comment = comments.rows[j];
+                        var commentPreview = comment[3] || '';
+                        if (commentPreview.length > 88) commentPreview = commentPreview.substring(0, 88) + '...';
+                    %>
+                        <article class="bbs-activity-row">
+                            <div class="bbs-activity-main">
+                                <a class="bbs-post-title bbs-link" href="/bbs/read?brdno=<%=comment[1]%>#comment-<%=comment[0]%>"><%=comment[2] || '(제목 없음)'%></a>
+                                <span><%=commentPreview%></span>
+                            </div>
+                            <div class="bbs-activity-meta">
+                                <span class="badge text-bg-light border"><%=comment[5] ? '대댓글' : '댓글'%></span>
+                                <span><i class="bi bi-calendar3"></i><%=comment[4]%></span>
+                            </div>
+                        </article>
+                    <% } %>
+                </div>
+
+                <% if (comments.rows.length === 0) { %>
+                    <div class="bbs-empty">작성한 댓글이 없습니다.</div>
+                <% } %>
+            </section>
+        </section>
+    </main>
+</body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/stylesheets/bbs.css" rel="stylesheet">
+    <title>게시글 읽기</title>
+    <script>
+        function toggleBlock(id) {
+            var el = document.getElementById(id);
+            if (!el) return false;
+            el.style.display = el.style.display === 'block' ? 'none' : 'block';
+            return false;
+        }
+
+        function confirmDelete(message) {
+            return confirm(message);
+        }
+    </script>
+</head>
+<body class="bbs-dashboard">
+    <%
+        var column = bbs.rows[0];
+        var comments = wbbs.rows || [];
+        var currentUserId = typeof userId === 'undefined' ? null : userId;
+        var currentPostReaction = typeof postReaction === 'undefined' ? null : postReaction;
+        var isPostOwner = currentUserId && currentUserId === column[2];
+        var attachedName = column[10] || column[9] || '';
+    %>
+
+    <main class="bbs-app">
+        <aside class="bbs-sidebar">
+            <a href="/bbs/list" class="bbs-sidebar-brand">
+                <span class="bbs-brand-mark">B</span>
+                <span>BBS</span>
+            </a>
+            <nav class="bbs-nav">
+                <a href="/bbs/list"><i class="bi bi-grid-fill"></i>게시판</a>
+                <% if (currentUserId) { %>
+                    <a href="/bbs/my"><i class="bi bi-person-circle"></i>내 활동</a>
+                    <a href="/bbs/updatesignup"><i class="bi bi-gear"></i>정보수정</a>
+                    <form method="post" action="/bbs/logout" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="bbs-link"><i class="bi bi-box-arrow-right"></i>로그아웃</button></form>
+                <% } else { %>
+                    <a href="/bbs/login"><i class="bi bi-box-arrow-in-right"></i>로그인</a>
+                    <a href="/bbs/signup"><i class="bi bi-person-plus"></i>회원가입</a>
+                <% } %>
+            </nav>
+        </aside>
+
+        <section class="bbs-main">
+            <article class="bbs-read-hero">
+                <div class="bbs-kicker">게시글</div>
+                <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                    <div>
+                        <h1><%=column[1] || '(제목 없음)'%></h1>
+                        <div class="bbs-meta mt-2">
+                            <span><i class="bi bi-person me-1"></i><%=column[2]%></span>
+                            <span><i class="bi bi-calendar3 me-1"></i><%=column[4]%></span>
+                            <span><i class="bi bi-eye me-1"></i><%=column[6] || 0%></span>
+                        </div>
+                    </div>
+                    <div class="bbs-post-actions">
+                        <a href="/bbs/list" class="btn btn-outline-secondary">목록</a>
+                        <% if (isPostOwner) { %>
+                            <a href="/bbs/update?brdno=<%=column[0]%>" class="btn btn-primary">수정</a>
+                            <form method="post" action="/bbs/delete?brdno=<%=column[0]%>" style="display:inline" onsubmit="return confirmDelete('삭제하시겠습니까?')"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-outline-danger">삭제</button></form>
+                        <% } %>
+                    </div>
+                </div>
+            </article>
+
+            <section class="bbs-card bbs-read-card">
+                <div class="bbs-content-box"><%=column[3]%></div>
+
+                <div class="bbs-reaction-bar bbs-post-reaction mt-3">
+                    <% if (currentUserId) { %>
+                        <form method="post" action="/bbs/good?brdno=<%=column[0]%>" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="bbs-reaction-btn <%=currentPostReaction === 'GOOD' ? 'is-active' : ''%>" aria-label="좋아요">
+                            <i class="bi <%=currentPostReaction === 'GOOD' ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'%>"></i>
+                            <span><%=column[7] || 0%></span>
+                        </button></form>
+                        <form method="post" action="/bbs/bad?brdno=<%=column[0]%>" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="bbs-reaction-btn <%=currentPostReaction === 'BAD' ? 'is-active' : ''%>" aria-label="나빠요">
+                            <i class="bi <%=currentPostReaction === 'BAD' ? 'bi-hand-thumbs-down-fill' : 'bi-hand-thumbs-down'%>"></i>
+                            <span><%=column[8] || 0%></span>
+                        </button></form>
+                    <% } else { %>
+                        <span class="bbs-reaction-btn is-disabled"><i class="bi bi-hand-thumbs-up"></i><span><%=column[7] || 0%></span></span>
+                        <span class="bbs-reaction-btn is-disabled"><i class="bi bi-hand-thumbs-down"></i><span><%=column[8] || 0%></span></span>
+                    <% } %>
+                </div>
+
+                <% if (column[9]) { %>
+                    <div class="bbs-soft-panel p-3 mt-3">
+                        
+                        <i class="bi bi-paperclip me-1"></i>
+                        <a href="/bbs/attachment/<%=column[0]%>" download class="bbs-link"><%=attachedName%></a>
+                    </div>
+                <% } %>
+            </section>
+
+            <section class="bbs-card bbs-comments-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h5 mb-0 fw-bold">댓글</h2>
+                    <span class="badge text-bg-light border"><%=comments.length%>개</span>
+                </div>
+
+                <% if (currentUserId) { %>
+                    <form name="commentForm" action="/bbs/wsave" method="post" class="bbs-comment-form mb-4">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <textarea name="wbrdmemo" class="form-control mb-2" rows="3" placeholder="댓글을 입력하세요"></textarea>
+                        <input type="hidden" name="bbsno" value="<%=column[0]%>">
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">댓글 저장</button>
+                        </div>
+                    </form>
+                <% } else { %>
+                    <div class="alert alert-light border">댓글을 작성하려면 <a href="/bbs/login">로그인</a>이 필요합니다.</div>
+                <% } %>
+
+                <div class="d-flex flex-column gap-3">
+                    <%
+                        for (var i = 0; i < comments.length; i++) {
+                            var wcolumn = comments[i];
+                            if (wcolumn[8]) continue;
+                            var isCommentOwner = currentUserId && currentUserId === wcolumn[2];
+                            var commentReaction = wcolumn[9];
+                    %>
+                        <article class="bbs-comment" id="comment-<%=wcolumn[0]%>">
+                            <div class="d-flex justify-content-between gap-3">
+                                <div>
+                                    <strong><%=wcolumn[2]%></strong>
+                                    <div class="bbs-muted small"><%=wcolumn[4]%></div>
+                                </div>
+                            </div>
+                            <div class="mt-3"><%=wcolumn[3]%></div>
+
+                            <div class="bbs-comment-actions mt-3">
+                                <% if (currentUserId) { %>
+                                    <form method="post" action="/bbs/wgood?brdno=<%=column[0]%>&wno=<%=wcolumn[0]%>" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="bbs-reaction-btn <%=commentReaction === 'GOOD' ? 'is-active' : ''%>" aria-label="좋아요">
+                                        <i class="bi <%=commentReaction === 'GOOD' ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'%>"></i>
+                                        <span><%=wcolumn[5] || 0%></span>
+                                    </button></form>
+                                    <form method="post" action="/bbs/wbad?brdno=<%=column[0]%>&wno=<%=wcolumn[0]%>" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="bbs-reaction-btn <%=commentReaction === 'BAD' ? 'is-active' : ''%>" aria-label="나빠요">
+                                        <i class="bi <%=commentReaction === 'BAD' ? 'bi-hand-thumbs-down-fill' : 'bi-hand-thumbs-down'%>"></i>
+                                        <span><%=wcolumn[6] || 0%></span>
+                                    </button></form>
+                                    <a class="bbs-action-link" href="#" onclick="return toggleBlock('reply-form-<%=wcolumn[0]%>')">답글</a>
+                                <% } else { %>
+                                    <span class="small bbs-muted">로그인 후 반응/답글 가능</span>
+                                <% } %>
+                                <% if (isCommentOwner) { %>
+                                    <a class="bbs-action-link" href="#" onclick="return toggleBlock('edit-comment-<%=wcolumn[0]%>')">수정</a>
+                                    <form method="post" action="/bbs/w_delete?brdno=<%=column[0]%>&wno=<%=wcolumn[0]%>" style="display:inline" onsubmit="return confirmDelete('삭제하시겠습니까?')"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="bbs-action-link bbs-danger-link">삭제</button></form>
+                                <% } %>
+                            </div>
+
+                            <% if (isCommentOwner) { %>
+                                <form id="edit-comment-<%=wcolumn[0]%>" class="edit-form" action="/bbs/w_update" method="post">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                    <textarea name="wbrdmemo" class="form-control mb-2" rows="2"><%=wcolumn[3]%></textarea>
+                                    <button type="submit" class="btn btn-sm btn-primary">저장</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleBlock('edit-comment-<%=wcolumn[0]%>')">취소</button>
+                                    <input type="hidden" name="bbsno" value="<%=column[0]%>">
+                                    <input type="hidden" name="wno" value="<%=wcolumn[0]%>">
+                                </form>
+                            <% } %>
+
+                            <% if (currentUserId) { %>
+                                <form id="reply-form-<%=wcolumn[0]%>" class="reply-form" action="/bbs/wsave" method="post">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                    <textarea name="wbrdmemo" class="form-control mb-2" rows="2" placeholder="답글을 입력하세요"></textarea>
+                                    <button type="submit" class="btn btn-sm btn-primary">답글 저장</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleBlock('reply-form-<%=wcolumn[0]%>')">취소</button>
+                                    <input type="hidden" name="bbsno" value="<%=column[0]%>">
+                                    <input type="hidden" name="parent_no" value="<%=wcolumn[0]%>">
+                                </form>
+                            <% } %>
+                        </article>
+
+                        <%
+                            for (var j = 0; j < comments.length; j++) {
+                                var reply = comments[j];
+                                if (reply[8] !== wcolumn[0]) continue;
+                                var isReplyOwner = currentUserId && currentUserId === reply[2];
+                                var replyReaction = reply[9];
+                        %>
+                            <article class="bbs-comment bbs-reply" id="comment-<%=reply[0]%>">
+                                <div class="d-flex justify-content-between gap-3">
+                                    <div>
+                                        <strong><i class="bi bi-arrow-return-right me-1"></i><%=reply[2]%></strong>
+                                        <div class="bbs-muted small"><%=reply[4]%></div>
+                                    </div>
+                                </div>
+                                <div class="mt-3"><%=reply[3]%></div>
+                                <div class="bbs-comment-actions mt-3">
+                                    <% if (currentUserId) { %>
+                                        <form method="post" action="/bbs/wgood?brdno=<%=column[0]%>&wno=<%=reply[0]%>" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="bbs-reaction-btn <%=replyReaction === 'GOOD' ? 'is-active' : ''%>" aria-label="좋아요">
+                                            <i class="bi <%=replyReaction === 'GOOD' ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'%>"></i>
+                                            <span><%=reply[5] || 0%></span>
+                                        </button></form>
+                                        <form method="post" action="/bbs/wbad?brdno=<%=column[0]%>&wno=<%=reply[0]%>" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="bbs-reaction-btn <%=replyReaction === 'BAD' ? 'is-active' : ''%>" aria-label="나빠요">
+                                            <i class="bi <%=replyReaction === 'BAD' ? 'bi-hand-thumbs-down-fill' : 'bi-hand-thumbs-down'%>"></i>
+                                            <span><%=reply[6] || 0%></span>
+                                        </button></form>
+                                    <% } else { %>
+                                        <span class="small bbs-muted">로그인 후 반응 가능</span>
+                                    <% } %>
+                                    <% if (isReplyOwner) { %>
+                                        <a class="bbs-action-link" href="#" onclick="return toggleBlock('edit-comment-<%=reply[0]%>')">수정</a>
+                                        <form method="post" action="/bbs/w_delete?brdno=<%=column[0]%>&wno=<%=reply[0]%>" style="display:inline" onsubmit="return confirmDelete('삭제하시겠습니까?')"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="bbs-action-link bbs-danger-link">삭제</button></form>
+                                    <% } %>
+                                </div>
+                                <% if (isReplyOwner) { %>
+                                    <form id="edit-comment-<%=reply[0]%>" class="edit-form" action="/bbs/w_update" method="post">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                        <textarea name="wbrdmemo" class="form-control mb-2" rows="2"><%=reply[3]%></textarea>
+                                        <button type="submit" class="btn btn-sm btn-primary">저장</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleBlock('edit-comment-<%=reply[0]%>')">취소</button>
+                                        <input type="hidden" name="bbsno" value="<%=column[0]%>">
+                                        <input type="hidden" name="wno" value="<%=reply[0]%>">
+                                    </form>
+                                <% } %>
+                            </article>
+                        <% } %>
+                    <% } %>
+                </div>
+            </section>
+        </section>
+    </main>
+</body>
+</html>
